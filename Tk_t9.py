@@ -18,7 +18,8 @@ class Text_T9:
     """""
     import Tk_t9
     T9 = Tk_t9.Text_T9(tkinter.Tk, tkinter.Text,'ru')
-    T9.Start()
+    T9.pack()
+    # T9.pack_forget()
     """
     @Check_class(0)
     def __init__(self: None, master: tkinter.Tk, Text_it: None, Lang: str):
@@ -29,14 +30,15 @@ class Text_T9:
 
         self.button = [[], []]
         self.Lang = Lang
-        self.Индекс_неправильных_слов = []
+        self.index_right = []
         self.Right_words = self.Save_load_Right('r', {})
 
         """ Tkinter """
         self.Windows = master
+        self.Text_set = Text_it
+
         self.frame0 = tkinter.Frame(self.Windows)
         self.frame1 = tkinter.Frame(self.Windows)
-        self.Text_set = Text_it
         self.Оffer_Lab = tkinter.Button(
             self.Windows, bg='#9AB85A', text='?', relief=tkinter.RIDGE, command=self.Getting_text)  # Текст с ошибкой
         for x in range(6):  # Cвертка Button
@@ -50,10 +52,8 @@ class Text_T9:
                     command=partial(self.Set_Text, x)))
         self.Windows.bind("<Key>", self.Key_invent)
 
-
-
     @Check_class(0)
-    def Start(self: None):
+    def pack(self: None):
         """
         Делает:
         1) Расположение кнопок в окне
@@ -73,6 +73,15 @@ class Text_T9:
             for y in x:
                 y.pack(side='left', fill=tkinter.BOTH, expand=True)
         self.Getting_text()
+
+    @Check_class(0)
+    def pack_forget(self: None):
+        self.Оffer_Lab.pack_forget()
+        for x in self.button:
+            self.frame0.pack_forget()
+            self.frame1.pack_forget()
+            for y in x:
+                y.pack_forget()
 
     @Check_class(0)
     def Key_invent(self: None, event: tkinter.Event):
@@ -188,13 +197,13 @@ class Text_T9:
     def Auxiliary(self: None, text: list):
         """
         Привязанная переменная:
-        1) self.Индекс_неправильных_слов -  для записи ответа
+        1) self.index_right -  для записи ответа
 
         Делает:
         1) Принимает текст в виде list
         2) отправляет его в self.Spelling
         3) Получает dict с неправильными словами
-        4) Формирует ответ - "Индекс_неправильных_слов"
+        4) Формирует ответ - "index_right"
         4.1) Выделяет их | |
         4.2) Указывайте индекс расположения текста
         4.3) Приписывает вариант замены
@@ -203,7 +212,7 @@ class Text_T9:
         Нужно:
         1) Полынй текст в list
         2) self.Spelling
-        3) self.Индекс_неправильных_слов
+        3) self.index_right
         4) self.Text_set
         """
 
@@ -213,7 +222,7 @@ class Text_T9:
             if sp_test.get(x[1]):
                 t = f'|{text[x[0]]}|'
                 text[x[0]] = t
-                self.Индекс_неправильных_слов.append((x[0], t, sp_test[x[1]]))
+                self.index_right.append((x[0], t, sp_test[x[1]]))
 
         self.Text_set.delete(1.0, tkinter.END)
         self.Text_set.insert(tkinter.INSERT, ' '.join(text))
@@ -225,14 +234,14 @@ class Text_T9:
         1) self.Text_set - текстовое поле
         2) self.Auxiliary 
         3) self.Оffer_Lab 
-        4) self.Индекс_неправильных_слов
+        4) self.index_right
         5) self.button
         6) self.Set_Text
 
         Делает:
         1) Получает слова из текстового поля
         2) Получает ответ от self.Auxiliary
-        3) Берет первый элемент из self.Индекс_неправильных_слов
+        3) Берет первый элемент из self.index_right
         4) Назначает self.Оffer_Lab неправильное слово
         5) Назначает кнопкам вариант замены слово если 
         нехватает слов то заменяет их на '-'
@@ -248,8 +257,8 @@ class Text_T9:
         if Text_gt != ['']:
             self.Auxiliary(Text_gt)
 
-        if self.Индекс_неправильных_слов:
-            Spelling_Text = self.Индекс_неправильных_слов[0]
+        if self.index_right:
+            Spelling_Text = self.index_right[0]
             if not self.Оffer_Lab['text'] == Spelling_Text[1]:
                 self.Оffer_Lab['text'] = Spelling_Text[1]
                 for x in enumerate(self.button[0]+self.button[1]):
@@ -260,11 +269,11 @@ class Text_T9:
                             self.Set_Text, Spelling_Text[0], text)
                     except IndexError:
                         x[1]['text'] = '-'
-                        x[1]['command'] = partial(self.Set_Text, '-')
+                        x[1]['command'] = partial(self.Set_Text, -1, '-')
 
-        else: 
+        else:
             if not self.button[0][0]['text'] == '-':
-                self.Оffer_Lab['text'] = '-'
+                self.Оffer_Lab['text'] = '?'
                 for x in enumerate(self.button[0]+self.button[1]):
                     x[1]['text'] = '-'
 
@@ -281,24 +290,26 @@ class Text_T9:
         1) Cord - Индекс неправильный слов
         2) text - Правильное слово
         3) self.Getting_text()
-        4) self.Индекс_неправильных_слов
+        4) self.index_right
         5) self.Save_load_Right - Для оптимизации 
 
         """
         self.Save_load_Right('w', self.Right_words)
 
-        All_text = self.Text_set.get(1.0, 'end-1c').split(' ')
+        if Cord != -1:
 
-        if All_text[Cord] == self.Оffer_Lab['text']:
-            All_text[Cord] = text
-            self.Text_set.delete(1.0, tkinter.END)
-            self.Text_set.insert(tkinter.INSERT, ' '.join(All_text))
-            self.Индекс_неправильных_слов.pop(0)
-            self.Getting_text()
+            All_text = self.Text_set.get(1.0, 'end-1c').split(' ')
 
-        else:
-            self.Индекс_неправильных_слов.pop(0)
-            self.Getting_text()
+            if All_text[Cord] == self.Оffer_Lab['text']:
+                All_text[Cord] = text
+                self.Text_set.delete(1.0, tkinter.END)
+                self.Text_set.insert(tkinter.INSERT, ' '.join(All_text))
+                self.index_right.pop(0)
+                self.Getting_text()
+
+            else:
+                self.index_right.pop(0)
+                self.Getting_text()
 
 
 if __name__ == '__main__':
@@ -308,5 +319,5 @@ if __name__ == '__main__':
     Text = tkinter.scrolledtext.ScrolledText(Windows, width=1, height=7)
     Text.pack(fill=tkinter.BOTH, expand=True)
     T9 = Text_T9(Windows, Text, 'ru')
-    T9.Start()
+    T9.pack()
     Windows.mainloop()
