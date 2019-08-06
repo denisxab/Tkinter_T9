@@ -10,8 +10,9 @@ import tkinter
 import tkinter.scrolledtext
 from functools import partial
 import requests
-from Check_class import Check_class
 import pyperclip
+from Check_class import Check_class
+
 
 class Text_T9:
     """""
@@ -21,11 +22,15 @@ class Text_T9:
     """
     @Check_class(0)
     def __init__(self: None, master: tkinter.Tk, Text_it: None, Lang: str):
+        """
+        # partial для того чтобы в цикле давать разные значения функции
+        #self.Text_set.bind('<KeyRelease>', lambda *args: self.Getting_text())
+        """
 
         self.button = [[], []]
         self.Lang = Lang
         self.Индекс_неправильных_слов = []
-        self.Right_words = self.Save_load_Right('r')
+        self.Right_words = self.Save_load_Right('r', {})
 
         """ Tkinter """
         self.Windows = master
@@ -45,10 +50,7 @@ class Text_T9:
                     command=partial(self.Set_Text, x)))
         self.Windows.bind("<Key>", self.Key_invent)
 
-        """
-        # partial для того чтобы в цикле давать разные значения функции
-        #self.Text_set.bind('<KeyRelease>', lambda *args: self.Getting_text())
-        """
+
 
     @Check_class(0)
     def Start(self: None):
@@ -98,7 +100,7 @@ class Text_T9:
             self.Text_set.delete(1.0, tkinter.END)
 
     @Check_class(0)
-    def Save_load_Right(self: None, reg: str, Right_words: dict = {}):
+    def Save_load_Right(self: None, reg: str, Right_words: dict):
         """
         Делает:
         1) Кэширует в self.Right_words
@@ -125,8 +127,10 @@ class Text_T9:
         with open('Right_words.json', 'w', encoding='utf-8') as JSW:
             json.dump(Right, JSW, sort_keys=False, ensure_ascii=False)
 
+        return True
+
     @Check_class(0)
-    def Spelling(self: None, Text: list, lang: str):
+    def Spelling(self: None, Text_no_sp: list, lang: str):
         """
         Привязанная переменная:
         1) self.Right_wordsв -  кеш слов
@@ -145,7 +149,7 @@ class Text_T9:
         """
 
         Error_word = {}
-        for text in Text:
+        for text in Text_no_sp:
 
             if text in self.Right_words:
                 if self.Right_words[text][0]:
@@ -239,10 +243,10 @@ class Text_T9:
         переконфигурируются        
         """
 
-        Text = self.Text_set.get(1.0, 'end-1c').split(' ')
+        Text_gt = self.Text_set.get(1.0, 'end-1c').split(' ')
 
-        if Text != ['']:
-            self.Auxiliary(Text)
+        if Text_gt != ['']:
+            self.Auxiliary(Text_gt)
 
         if self.Индекс_неправильных_слов:
             Spelling_Text = self.Индекс_неправильных_слов[0]
