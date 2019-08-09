@@ -4,14 +4,13 @@
 """
 Плагин - приложение по исправлению орфографической ошибкой
 """
-
+import os
 import json
 import tkinter
 import tkinter.scrolledtext
 from functools import partial
 import requests
-import pyperclip
-from Check_class import Check_class
+
 
 
 class Text_T9:
@@ -21,8 +20,10 @@ class Text_T9:
     T9.pack()
     # T9.pack_forget()
     """
-    @Check_class(0)
-    def __init__(self: None, master: tkinter.Tk, Text_it: None, Lang: str):
+    if not 'Data' in os.listdir():
+        os.makedirs('Data')
+
+    def __init__(self: None, master: tkinter.Tk, Text_it: None, Lang: str, bg_root='#9AB85A', bg='#74A889', fg='#000',):
         """
         # partial для того чтобы в цикле давать разные значения функции
         #self.Text_set.bind('<KeyRelease>', lambda *args: self.Getting_text())
@@ -31,7 +32,10 @@ class Text_T9:
         self.button = [[], []]
         self.Lang = Lang
         self.index_right = []
-        self.Right_words = self.Save_load_Right('r', {})
+        self.Right_words = Save_load_Right('r', {})
+        self.Bg_root_color = bg_root
+        self.Beack_color = bg
+        self.Fg_color = fg
 
         """ Tkinter """
         self.Windows = master
@@ -40,19 +44,18 @@ class Text_T9:
         self.frame0 = tkinter.Frame(self.Windows)
         self.frame1 = tkinter.Frame(self.Windows)
         self.Оffer_Lab = tkinter.Button(
-            self.Windows, bg='#9AB85A', text='?', relief=tkinter.RIDGE, command=self.Getting_text)  # Текст с ошибкой
+            self.Windows, bg=self.Bg_root_color, fg=self.Fg_color, text='?', relief=tkinter.RIDGE, command=self.Getting_text)  # Текст с ошибкой
         for x in range(6):  # Cвертка Button
             if x < 3:
                 self.button[0].append(tkinter.Button(
-                    self.frame0, bg='#74A889', width=1, height=1, text='-',
+                    self.frame0, fg=self.Fg_color, bg=self.Beack_color, width=1, height=1, text='-',
                     command=partial(self.Set_Text, x)))
             else:
                 self.button[1].append(tkinter.Button(
-                    self.frame1, bg='#74A889', width=1, height=1, text='-',
+                    self.frame1, fg=self.Fg_color, bg=self.Beack_color, width=1, height=1, text='-',
                     command=partial(self.Set_Text, x)))
-        self.Windows.bind("<Key>", self.Key_invent)
+        # self.Windows.bind("<Key>", self.Key_invent)
 
-    @Check_class(0)
     def pack(self: None):
         """
         Делает:
@@ -74,8 +77,10 @@ class Text_T9:
                 y.pack(side='left', fill=tkinter.BOTH, expand=True)
         self.Getting_text()
 
-    @Check_class(0)
     def pack_forget(self: None):
+        """
+        Убрать - скрыть
+        """
         self.Оffer_Lab.pack_forget()
         for x in self.button:
             self.frame0.pack_forget()
@@ -83,62 +88,6 @@ class Text_T9:
             for y in x:
                 y.pack_forget()
 
-    @Check_class(0)
-    def Key_invent(self: None, event: tkinter.Event):
-        """
-        Делает:
-        1) Работа с буфером памяти
-
-        Нужно:
-        0) pyperclip
-        1) self.Text_set
-        2) event:tkinter.Event
-        3) Getting_text - удобство
-        """
-
-        Key = bytes(event.char, encoding='utf-8')
-
-        if Key == b'\x16':  # 'Ctr+v'
-            self.Text_set.insert(tkinter.INSERT, str(pyperclip.paste()))
-            self.Getting_text()
-
-        elif Key == b'\x03':  # 'Ctr+c'
-            pyperclip.copy(self.Text_set.get(1.0, 'end-1c'))
-
-        elif Key == b'\x18':  # 'Ctr+x'
-            self.Text_set.delete(1.0, tkinter.END)
-
-    @Check_class(0)
-    def Save_load_Right(self: None, reg: str, Right_words: dict):
-        """
-        Делает:
-        1) Кэширует в self.Right_words
-
-        Нужно:
-        0) json
-        1) self.Right_words
-        """
-        if reg == 'r':
-            try:
-                with open('Right_words.json', 'r', encoding='utf-8') as JSR:
-                    Right = json.load(JSR)
-            except FileNotFoundError:
-                with open('Right_words.json', 'w', encoding='utf-8') as JSW:
-                    json.dump({}, JSW, sort_keys=False,
-                              ensure_ascii=False)
-                with open('Right_words.json', 'r', encoding='utf-8') as JSR:
-                    Right = json.load(JSR)
-            return Right
-
-        with open('Right_words.json', 'r', encoding='utf-8') as JSR:
-            Right = json.load(JSR)
-            Right.update(Right_words)
-        with open('Right_words.json', 'w', encoding='utf-8') as JSW:
-            json.dump(Right, JSW, sort_keys=False, ensure_ascii=False)
-
-        return True
-
-    @Check_class(0)
     def Spelling(self: None, Text_no_sp: list, lang: str):
         """
         Привязанная переменная:
@@ -170,7 +119,7 @@ class Text_T9:
 
             else:
                 try:
-                    self.Оffer_Lab['bg'] = '#ABE7EC'
+                    self.Оffer_Lab['bg'] = self.Bg_root_color
                     url = 'https://speller.yandex.net/services/spellservice.json/checkText?'
                     respons = requests.get(
                         url, params={'text': text, 'lang': lang}).json()
@@ -188,12 +137,11 @@ class Text_T9:
 
                 elif not respons:
                     self.Right_words[text] = (1,)
-                    self.Оffer_Lab['bg'] = '#9AB85A'
+                    self.Оffer_Lab['bg'] = self.Bg_root_color
                     continue
 
         return Error_word
 
-    @Check_class(0)
     def Auxiliary(self: None, text: list):
         """
         Привязанная переменная:
@@ -227,7 +175,6 @@ class Text_T9:
         self.Text_set.delete(1.0, tkinter.END)
         self.Text_set.insert(tkinter.INSERT, ' '.join(text))
 
-    @Check_class(0)
     def Getting_text(self: None):
         """
         Нужно:
@@ -277,7 +224,6 @@ class Text_T9:
                 for x in enumerate(self.button[0]+self.button[1]):
                     x[1]['text'] = '-'
 
-    @Check_class(0)
     def Set_Text(self: None, Cord: int, text: str):
         """
         Делает:
@@ -294,7 +240,7 @@ class Text_T9:
         5) self.Save_load_Right - Для оптимизации 
 
         """
-        self.Save_load_Right('w', self.Right_words)
+        Save_load_Right('w', self.Right_words)
 
         if Cord != -1:
 
@@ -312,6 +258,35 @@ class Text_T9:
                 self.Getting_text()
 
 
+def Save_load_Right(reg: str, Right_words: dict):
+    """
+    Делает:
+    1) Кэширует в self.Right_words
+
+    Нужно:
+    0) json
+    1) self.Right_words
+    """
+    if reg == 'r':
+        try:
+            with open('Data\\Right_words.json', 'r', encoding='utf-8') as JSR:
+                Right = json.load(JSR)
+        except FileNotFoundError:
+            with open('Data\\Right_words.json', 'w', encoding='utf-8') as JSW:
+                json.dump({}, JSW, sort_keys=False,
+                          ensure_ascii=False)
+            with open('Data\\Right_words.json', 'r', encoding='utf-8') as JSR:
+                Right = json.load(JSR)
+        return Right
+
+    with open('Data\\Right_words.json', 'r', encoding='utf-8') as JSR:
+        Right = json.load(JSR)
+        Right.update(Right_words)
+    with open('Data\\Right_words.json', 'w', encoding='utf-8') as JSW:
+        json.dump(Right, JSW, sort_keys=False, ensure_ascii=False)
+
+    return True
+
 if __name__ == '__main__':
     Windows = tkinter.Tk()
     Windows.title('T-9')
@@ -321,3 +296,24 @@ if __name__ == '__main__':
     T9 = Text_T9(Windows, Text, 'ru')
     T9.pack()
     Windows.mainloop()
+
+
+# @Check_class(0)
+# def Key_invent(self: None, event: tkinter.Event):
+#     """
+#     Делает:
+#     1) Работа с буфером памяти
+#     Нужно:
+#     0) pyperclip
+#     1) self.Text_set
+#     2) event:tkinter.Event
+#     3) Getting_text - удобство
+#     """
+#     Key = bytes(event.char, encoding='utf-8')
+#     if Key == b'\x16':  # 'Ctr+v'
+#         self.Text_set.insert(tkinter.INSERT, str(pyperclip.paste()))
+#         self.Getting_text()
+#     elif Key == b'\x03':  # 'Ctr+c'
+#         pyperclip.copy(self.Text_set.get(1.0, 'end-1c'))
+#     elif Key == b'\x18':  # 'Ctr+x'
+#         self.Text_set.delete(1.0, tkinter.END)
