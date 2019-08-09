@@ -18,6 +18,7 @@ def Check_class(Reg=0):
     """s
     Декоратор для проверки типов входящих переменных
     """
+    
     def actual_decorator(func):
         def decorator_function(*Items, **Dicts):
             """
